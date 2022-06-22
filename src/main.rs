@@ -49,6 +49,12 @@ const FLOOR_WIDTH: f32 = 336.0;
 const FLOOR_HEIGHT: f32 = 112.0;
 
 #[derive(Component)]
+struct Countable(bool);
+
+#[derive(Component)]
+struct ScoreText;
+
+#[derive(Component)]
 struct Floor;
 #[derive(Component)]
 struct Player {
@@ -146,20 +152,68 @@ fn animate_sprite_system(
     }
 }
 
-fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform)>) {
+fn auto_move_system(mut query: Query<(&AutoMoving, &mut Countable, &mut Transform)>) {
     let mut rng = thread_rng();
 
-    for (auto_moving, mut transform) in query.iter_mut() {
+    for (auto_moving, mut countable, mut transform) in query.iter_mut() {
         transform.translation.x -= AUTO_MOVE_SPEED;
 
         // if out of screen -> move to other side
         if transform.translation.x + auto_moving.width / 2.0 < -SCREEN_WIDTH / 2.0 {
+            countable.0 = true;
             transform.translation.x =
                 SCREEN_WIDTH / 2.0 + auto_moving.width / 2.0 + auto_moving.displacement;
             transform.translation.y =
                 auto_moving.initial.y + auto_moving.randomness.y * rng.gen_range(-1.0..1.0);
         }
     }
+}
+
+fn point_count_system(
+    mut scoreboard: ResMut<Scoreboard>,
+    mut countable_query: Query<(&mut Countable, &Transform)>,
+    player_query: Query<(&Player, &Transform)>,
+) {
+    let (_, player_transform) = player_query.single();
+
+    for (mut countable, transform) in countable_query.iter_mut() {
+        if !countable.0 {
+            continue;
+        }
+
+        if transform.translation.x < player_transform.translation.x {
+            countable.0 = false;
+            scoreboard.score += 1;
+        }
+    }
+}
+
+fn update_score_text(scoreboard: Res<Scoreboard>, mut query: Query<(&ScoreText, &mut Text)>) {
+    let (_, mut text) = query.single_mut();
+    text.sections.get_mut(0).unwrap().value = scoreboard.score.to_string();
+}
+
+fn collision_system() {}
+
+fn setup_font(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font = asset_server.load("flappy-font.ttf");
+    let style = TextStyle {
+        font,
+        font_size: 100.0,
+        color: Color::WHITE,
+    };
+    let alignment = TextAlignment {
+        vertical: VerticalAlign::Center,
+        horizontal: HorizontalAlign::Center,
+    };
+
+    commands
+        .spawn_bundle(Text2dBundle {
+            text: Text::with_section("0", style, alignment),
+            transform: Transform::from_xyz(0.0, SCREEN_HEIGHT / 4.0, 1.0),
+            ..default()
+        })
+        .insert(ScoreText);
 }
 
 fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -185,6 +239,7 @@ fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
                 randomness: vec3(0.0, PIPE_RANDOM_Y, 0.0),
                 initial: vec3(0.0, 0.0, 0.0),
             })
+            .insert(Countable(true))
             .id();
         let pipe_top = pipe_handle.clone();
         let pipe_bottom = pipe_top.clone();
@@ -306,9 +361,13 @@ fn main() {
         .add_startup_system(setup_player)
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
+        .add_startup_system(setup_font)
         .add_system(handle_input_system)
         .add_system(player_movement_system)
         .add_system(animate_sprite_system)
         .add_system(auto_move_system)
+        .add_system(collision_system)
+        .add_system(point_count_system)
+        .add_system(update_score_text)
         .run();
 }
