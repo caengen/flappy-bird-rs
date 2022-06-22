@@ -38,7 +38,7 @@ struct Gravity(f32);
 
 const PIPE_WIDTH: f32 = 52.0;
 const PIPE_HEIGHT: f32 = 320.0;
-const SPACE_BETWEEN_PIPES: f32 = 100.0 * PIXELS_PER_METER;
+const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
 const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 
 #[derive(Component)]
@@ -168,7 +168,7 @@ fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             })
             .insert(AutoMoving {
                 width: PIPE_WIDTH * 2.0,
-                displacement: SPACE_BETWEEN_PIPES,
+                displacement: SPACE_BETWEEN_PIPES / 2.0,
             })
             .id();
         let pipe_top = pipe_handle.clone();
