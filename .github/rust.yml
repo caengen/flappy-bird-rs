@@ -1,0 +1,28 @@
+name: wasm build
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download wasm target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Build
+        run: cargo build --target wasm32-unknown-unknown
+      - name: Copy wasm
+        run: cp "./target/wasm32-unknown-unknown/debug/flappy-bird-rs.wasm" "./bin/flappy-bird-rs.wasm"
+      - name: Commit wasm
+        uses: EndBug/add-and-commit@v9
+        with:
+          github_token: ${{ secrets.PASS_TOKEN }}
+          add: "./bin/flappy-bird-rs.wasm"

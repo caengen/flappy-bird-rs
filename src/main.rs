@@ -221,12 +221,18 @@ fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
     let mut rng = thread_rng();
 
     for n in 0..2 {
+        let rand_num = if rng.gen_ratio(1, 2) {
+            rng.gen_range(0.5..1.0)
+        } else {
+            rng.gen_range(-1.0..-0.5)
+        };
+
         let parent = commands
             .spawn_bundle(TransformBundle {
                 local: Transform {
                     translation: vec3(
                         PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
-                        n as f32 * (PIPE_RANDOM_Y * rng.gen_range(-1.0..1.0)),
+                        n as f32 * (PIPE_RANDOM_Y * rand_num),
                         0.0,
                     ),
                     ..Default::default()
@@ -299,7 +305,8 @@ fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 displacement: 0.0,
                 initial: vec3(0.0, FLOOR_POS, 1.0),
                 randomness: vec3(0.0, 0.0, 0.0),
-            });
+            })
+            .insert(Countable(false));
     }
 }
 
