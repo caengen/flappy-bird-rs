@@ -1325,6 +1325,8 @@ name = "flappy-bird-rs"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "getrandom",
+ "rand",
 ]
 
 [[package]]

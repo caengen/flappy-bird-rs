@@ -1,15 +1,15 @@
 use bevy::{
-    core::FixedTimestep,
     math::{const_vec3, vec2, vec3},
     prelude::*,
     window::PresentMode,
 };
+use rand::prelude::*;
 
 const SCREEN_HEIGHT: f32 = 960.0;
 const SCREEN_WIDTH: f32 = 640.0;
 
 const FLOOR_POS: f32 = -112.0 * 4.0;
-const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
+const AUTO_MOVE_SPEED: f32 = 0.5 * PIXELS_PER_METER;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -40,6 +40,7 @@ const PIPE_WIDTH: f32 = 52.0;
 const PIPE_HEIGHT: f32 = 320.0;
 const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
 const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
+const PIPE_RANDOM_Y: f32 = 40.0 * PIXELS_PER_METER;
 
 #[derive(Component)]
 struct Pipe;
@@ -60,6 +61,8 @@ struct Player {
 struct AutoMoving {
     width: f32,
     displacement: f32,
+    randomness: Vec3,
+    initial: Vec3,
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -144,6 +147,8 @@ fn animate_sprite_system(
 }
 
 fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform)>) {
+    let mut rng = thread_rng();
+
     for (auto_moving, mut transform) in query.iter_mut() {
         transform.translation.x -= AUTO_MOVE_SPEED;
 
@@ -151,17 +156,25 @@ fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform)>) {
         if transform.translation.x + auto_moving.width / 2.0 < -SCREEN_WIDTH / 2.0 {
             transform.translation.x =
                 SCREEN_WIDTH / 2.0 + auto_moving.width / 2.0 + auto_moving.displacement;
+            transform.translation.y =
+                auto_moving.initial.y + auto_moving.randomness.y * rng.gen_range(-1.0..1.0);
         }
     }
 }
 
 fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
     let pipe_handle = asset_server.load("sprites/pipe-green.png");
+    let mut rng = thread_rng();
+
     for n in 0..2 {
         let parent = commands
             .spawn_bundle(TransformBundle {
                 local: Transform {
-                    translation: vec3(PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES, 0.0, 0.0),
+                    translation: vec3(
+                        PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
+                        n as f32 * (PIPE_RANDOM_Y * rng.gen_range(-1.0..1.0)),
+                        0.0,
+                    ),
                     ..Default::default()
                 },
                 ..default()
@@ -169,6 +182,8 @@ fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             .insert(AutoMoving {
                 width: PIPE_WIDTH * 2.0,
                 displacement: SPACE_BETWEEN_PIPES / 2.0,
+                randomness: vec3(0.0, PIPE_RANDOM_Y, 0.0),
+                initial: vec3(0.0, 0.0, 0.0),
             })
             .id();
         let pipe_top = pipe_handle.clone();
@@ -227,6 +242,8 @@ fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
             .insert(AutoMoving {
                 width: FLOOR_WIDTH,
                 displacement: 0.0,
+                initial: vec3(0.0, FLOOR_POS, 1.0),
+                randomness: vec3(0.0, 0.0, 0.0),
             });
     }
 }
