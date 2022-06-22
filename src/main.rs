@@ -9,7 +9,7 @@ const SCREEN_HEIGHT: f32 = 960.0;
 const SCREEN_WIDTH: f32 = 640.0;
 
 const FLOOR_POS: f32 = -112.0 * 4.0;
-const FLOOR_SPEED: f32 = 1.0 * PIXELS_PER_METER;
+const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -24,7 +24,7 @@ const PLAYER_WIDTH: f32 = 16.0;
 const PLAYER_POS_X: f32 = -75.0;
 
 const PIXELS_PER_METER: f32 = 30.0 / SCALE;
-const JUMP_SPEED: f32 = 100.0 * PIXELS_PER_METER;
+const JUMP_SPEED: f32 = 125.0 * PIXELS_PER_METER;
 const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
 
 const BIRD_SIZE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 1.0]);
@@ -36,6 +36,19 @@ struct Scoreboard {
 // in m/s - usually -9.8 m/s
 struct Gravity(f32);
 
+const PIPE_WIDTH: f32 = 52.0;
+const PIPE_HEIGHT: f32 = 320.0;
+const SPACE_BETWEEN_PIPES: f32 = 100.0 * PIXELS_PER_METER;
+const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
+
+#[derive(Component)]
+struct Pipe;
+
+const FLOOR_WIDTH: f32 = 336.0;
+const FLOOR_HEIGHT: f32 = 112.0;
+
+#[derive(Component)]
+struct Floor;
 #[derive(Component)]
 struct Player {
     // in m/s
@@ -44,7 +57,10 @@ struct Player {
 }
 
 #[derive(Component)]
-struct Floor;
+struct AutoMoving {
+    width: f32,
+    displacement: f32,
+}
 
 #[derive(Component, Deref, DerefMut)]
 struct AnimationTimer(Timer);
@@ -127,17 +143,95 @@ fn animate_sprite_system(
     }
 }
 
-fn animate_floor_system(mut query: Query<(&Floor, &mut Transform)>) {
-    for (_, mut transform) in query.iter_mut() {
-        transform.translation.x -= FLOOR_SPEED;
+fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform)>) {
+    for (auto_moving, mut transform) in query.iter_mut() {
+        transform.translation.x -= AUTO_MOVE_SPEED;
 
-        if transform.translation.x <= -504.0 {
-            transform.translation.x = 504.0
+        // if out of screen -> move to other side
+        if transform.translation.x + auto_moving.width / 2.0 < -SCREEN_WIDTH / 2.0 {
+            transform.translation.x =
+                SCREEN_WIDTH / 2.0 + auto_moving.width / 2.0 + auto_moving.displacement;
         }
     }
 }
 
-fn setup(
+fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let pipe_handle = asset_server.load("sprites/pipe-green.png");
+    for n in 0..2 {
+        let parent = commands
+            .spawn_bundle(TransformBundle {
+                local: Transform {
+                    translation: vec3(PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES, 0.0, 0.0),
+                    ..Default::default()
+                },
+                ..default()
+            })
+            .insert(AutoMoving {
+                width: PIPE_WIDTH * 2.0,
+                displacement: SPACE_BETWEEN_PIPES,
+            })
+            .id();
+        let pipe_top = pipe_handle.clone();
+        let pipe_bottom = pipe_top.clone();
+        let space_between = SCREEN_HEIGHT / 3.5;
+        let child_top = commands
+            .spawn_bundle(SpriteBundle {
+                texture: pipe_top,
+                transform: Transform {
+                    translation: vec3(0.0, PIPE_HEIGHT + space_between / 2.0, 0.0),
+                    scale: vec3(2.0, 2.0, 0.0),
+                    rotation: Quat::from_rotation_z((180.0 as f32).to_radians()),
+                    ..default()
+                },
+                ..default()
+            })
+            .id();
+        let child_bottom = commands
+            .spawn_bundle(SpriteBundle {
+                texture: pipe_bottom,
+                transform: Transform {
+                    translation: vec3(0.0, -(PIPE_HEIGHT + space_between / 2.0), 0.0),
+                    scale: vec3(2.0, 2.0, 0.0),
+                    ..default()
+                },
+                ..default()
+            })
+            .id();
+        commands
+            .entity(parent)
+            .push_children(&[child_top, child_bottom]);
+    }
+}
+
+fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let quotient = FLOOR_WIDTH / SCREEN_WIDTH;
+    let floors = f32::ceil(1.5 / quotient) as i32;
+
+    let base_image = asset_server.load("sprites/base.png");
+    for n in 0..floors {
+        let floor_img = base_image.clone();
+        commands
+            .spawn_bundle(SpriteBundle {
+                texture: floor_img,
+                transform: Transform {
+                    scale: vec3(1.0, 1.0, 0.0),
+                    translation: vec3(
+                        -(SCREEN_WIDTH / 2.0) + FLOOR_WIDTH / 2.0 + (n as f32) * FLOOR_WIDTH,
+                        FLOOR_POS,
+                        1.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            })
+            .insert(AutoMoving {
+                width: FLOOR_WIDTH,
+                displacement: 0.0,
+            });
+    }
+}
+
+fn setup_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
@@ -147,9 +241,6 @@ fn setup(
     commands.spawn_bundle(UiCameraBundle::default());
 
     let bg_image = asset_server.load("sprites/background-day.png");
-    let base_image = asset_server.load("sprites/base.png");
-    let base_image_2 = base_image.clone();
-    let base_image_3 = base_image.clone();
     commands.spawn_bundle(SpriteBundle {
         texture: bg_image,
         transform: Transform {
@@ -158,39 +249,8 @@ fn setup(
         },
         ..default()
     });
-    commands
-        .spawn_bundle(SpriteBundle {
-            texture: base_image,
-            transform: Transform {
-                scale: vec3(1.0, 1.0, 0.0),
-                translation: vec3(-168.0, FLOOR_POS, 0.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(Floor);
-    commands
-        .spawn_bundle(SpriteBundle {
-            texture: base_image_2,
-            transform: Transform {
-                scale: vec3(1.0, 1.0, 0.0),
-                translation: vec3(168.0, FLOOR_POS, 0.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(Floor);
-    commands
-        .spawn_bundle(SpriteBundle {
-            texture: base_image_3,
-            transform: Transform {
-                scale: vec3(1.0, 1.0, 0.0),
-                translation: vec3(337.0, FLOOR_POS, 0.0),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(Floor);
+
+    let mut texture_atlas_builder = TextureAtlasBuilder::default();
 
     let texture_handle = asset_server.load("sprites/redbird.png");
     let texture_atlas = TextureAtlas::from_grid(texture_handle, vec2(34.0, 24.0), 3, 1);
@@ -226,10 +286,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(Scoreboard { score: 0 })
         .insert_resource(Gravity(SCALED_GRAVITY))
-        .add_startup_system(setup)
+        .add_startup_system(setup_player)
+        .add_startup_system(setup_floor)
+        .add_startup_system(setup_pipes)
         .add_system(handle_input_system)
         .add_system(player_movement_system)
         .add_system(animate_sprite_system)
-        .add_system(animate_floor_system)
+        .add_system(auto_move_system)
         .run();
 }
