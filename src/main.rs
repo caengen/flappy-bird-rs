@@ -152,15 +152,17 @@ fn animate_sprite_system(
     }
 }
 
-fn auto_move_system(mut query: Query<(&AutoMoving, &mut Countable, &mut Transform)>) {
+fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>) {
     let mut rng = thread_rng();
 
-    for (auto_moving, mut countable, mut transform) in query.iter_mut() {
+    for (auto_moving, mut transform, countable) in query.iter_mut() {
         transform.translation.x -= AUTO_MOVE_SPEED;
 
         // if out of screen -> move to other side
         if transform.translation.x + auto_moving.width / 2.0 < -SCREEN_WIDTH / 2.0 {
-            countable.0 = true;
+            if let Some(mut countable) = countable {
+                countable.0 = true;
+            }
             transform.translation.x =
                 SCREEN_WIDTH / 2.0 + auto_moving.width / 2.0 + auto_moving.displacement;
             transform.translation.y =
@@ -305,8 +307,7 @@ fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 displacement: 0.0,
                 initial: vec3(0.0, FLOOR_POS, 1.0),
                 randomness: vec3(0.0, 0.0, 0.0),
-            })
-            .insert(Countable(false));
+            });
     }
 }
 
