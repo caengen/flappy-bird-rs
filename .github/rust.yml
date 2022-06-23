@@ -19,10 +19,11 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Build
         run: cargo build --target wasm32-unknown-unknown
+        run: wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm
       - name: Copy wasm
-        run: cp "./target/wasm32-unknown-unknown/debug/flappy-bird-rs.wasm" "./bin/flappy-bird-rs.wasm"
+        run: cp -R out bin
       - name: Commit wasm
         uses: EndBug/add-and-commit@v9
         with:
           github_token: ${{ secrets.PASS_TOKEN }}
-          add: "./bin/flappy-bird-rs.wasm"
+          add: "./bin"

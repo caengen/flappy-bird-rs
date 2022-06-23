@@ -1,6 +1,7 @@
 use bevy::{
-    math::{const_vec3, vec2, vec3},
+    math::{const_vec2, const_vec3, vec2, vec3},
     prelude::*,
+    sprite::collide_aabb::collide,
     window::PresentMode,
 };
 use rand::prelude::*;
@@ -9,7 +10,7 @@ const SCREEN_HEIGHT: f32 = 960.0;
 const SCREEN_WIDTH: f32 = 640.0;
 
 const FLOOR_POS: f32 = -112.0 * 4.0;
-const AUTO_MOVE_SPEED: f32 = 0.5 * PIXELS_PER_METER;
+const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
 
 const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -21,6 +22,7 @@ const GAME_WIDTH: f32 = 136.0;
 const SCALE: f32 = SCREEN_WIDTH / GAME_WIDTH;
 const PLAYER_HEIGHT: f32 = 12.0;
 const PLAYER_WIDTH: f32 = 16.0;
+const PLAYER_DIM: Vec2 = const_vec2!([PLAYER_WIDTH, PLAYER_HEIGHT]);
 const PLAYER_POS_X: f32 = -75.0;
 
 const PIXELS_PER_METER: f32 = 30.0 / SCALE;
@@ -29,6 +31,11 @@ const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
 
 const BIRD_SIZE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 1.0]);
 
+#[derive(PartialEq)]
+enum GameState {
+    Running,
+    GameOver,
+}
 struct Scoreboard {
     score: usize,
 }
@@ -36,8 +43,11 @@ struct Scoreboard {
 // in m/s - usually -9.8 m/s
 struct Gravity(f32);
 
+// unscaled
 const PIPE_WIDTH: f32 = 52.0;
 const PIPE_HEIGHT: f32 = 320.0;
+//scaled
+const PIPE_DIM: Vec2 = const_vec2!([PIPE_WIDTH * 2.0, PIPE_HEIGHT * 2.0]);
 const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
 const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 const PIPE_RANDOM_Y: f32 = 40.0 * PIXELS_PER_METER;
@@ -53,6 +63,13 @@ struct Countable(bool);
 
 #[derive(Component)]
 struct ScoreText;
+
+#[derive(Component)]
+struct Collider;
+#[derive(Component)]
+struct Blocker;
+
+struct CollisionEvent;
 
 #[derive(Component)]
 struct Floor;
@@ -152,7 +169,14 @@ fn animate_sprite_system(
     }
 }
 
-fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>) {
+fn auto_move_system(
+    game_state: Res<GameState>,
+    mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>,
+) {
+    if *game_state == GameState::GameOver {
+        return;
+    }
+
     let mut rng = thread_rng();
 
     for (auto_moving, mut transform, countable) in query.iter_mut() {
@@ -195,7 +219,30 @@ fn update_score_text(scoreboard: Res<Scoreboard>, mut query: Query<(&ScoreText, 
     text.sections.get_mut(0).unwrap().value = scoreboard.score.to_string();
 }
 
-fn collision_system() {}
+fn collision_system(
+    mut game_state: ResMut<GameState>,
+    collider_query: Query<(&Collider, &Transform)>,
+    blocker_query: Query<(&Blocker, &GlobalTransform)>,
+) {
+    for (_, c_transf) in collider_query.iter() {
+        for (_, b_transf) in blocker_query.iter() {
+            let collision = collide(
+                c_transf.translation,
+                PLAYER_DIM,
+                b_transf.translation,
+                PIPE_DIM,
+            ); // hmmmm funker ikke
+            match collision {
+                Some(_collision) => {
+                    *game_state = GameState::GameOver;
+                }
+                None => {
+                    continue;
+                }
+            }
+        }
+    }
+}
 
 fn setup_font(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("flappy-font.ttf");
@@ -255,25 +302,32 @@ fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
         let child_top = commands
             .spawn_bundle(SpriteBundle {
                 texture: pipe_top,
-                transform: Transform {
+                ..default()
+            })
+            .insert_bundle(TransformBundle {
+                local: Transform {
                     translation: vec3(0.0, PIPE_HEIGHT + space_between / 2.0, 0.0),
                     scale: vec3(2.0, 2.0, 0.0),
                     rotation: Quat::from_rotation_z((180.0 as f32).to_radians()),
-                    ..default()
                 },
                 ..default()
             })
+            .insert(Blocker)
             .id();
         let child_bottom = commands
             .spawn_bundle(SpriteBundle {
                 texture: pipe_bottom,
-                transform: Transform {
+                ..default()
+            })
+            .insert_bundle(TransformBundle {
+                local: Transform {
                     translation: vec3(0.0, -(PIPE_HEIGHT + space_between / 2.0), 0.0),
                     scale: vec3(2.0, 2.0, 0.0),
                     ..default()
                 },
                 ..default()
             })
+            .insert(Blocker)
             .id();
         commands
             .entity(parent)
@@ -307,7 +361,8 @@ fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 displacement: 0.0,
                 initial: vec3(0.0, FLOOR_POS, 1.0),
                 randomness: vec3(0.0, 0.0, 0.0),
-            });
+            })
+            .insert(Blocker);
     }
 }
 
@@ -330,8 +385,6 @@ fn setup_player(
         ..default()
     });
 
-    let mut texture_atlas_builder = TextureAtlasBuilder::default();
-
     let texture_handle = asset_server.load("sprites/redbird.png");
     let texture_atlas = TextureAtlas::from_grid(texture_handle, vec2(34.0, 24.0), 3, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
@@ -351,6 +404,7 @@ fn setup_player(
             texture_atlas: texture_atlas_handle,
             ..default()
         })
+        .insert(Collider)
         .insert(AnimationTimer(Timer::from_seconds(0.2, true)));
 }
 
@@ -366,6 +420,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(Scoreboard { score: 0 })
         .insert_resource(Gravity(SCALED_GRAVITY))
+        .insert_resource(GameState::Running)
         .add_startup_system(setup_player)
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
