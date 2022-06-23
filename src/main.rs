@@ -5,113 +5,10 @@ use bevy::{
     window::PresentMode,
 };
 use rand::prelude::*;
-
-const SCREEN_HEIGHT: f32 = 960.0;
-const SCREEN_WIDTH: f32 = 640.0;
-
-const FLOOR_POS: f32 = -112.0 * 4.0;
-const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
-
-const TIME_STEP: f32 = 1.0 / 60.0;
-
-const SCOREBOARD_FONT_SIZE: f32 = 40.0;
-const SCOREBOARD_TEXT_PADDING: Val = Val::Px(5.0);
-
-// unscaled consts
-const GAME_WIDTH: f32 = 136.0;
-const SCALE: f32 = SCREEN_WIDTH / GAME_WIDTH;
-const PLAYER_HEIGHT: f32 = 12.0;
-const PLAYER_WIDTH: f32 = 16.0;
-const PLAYER_DIM: Vec2 = const_vec2!([PLAYER_WIDTH, PLAYER_HEIGHT]);
-const PLAYER_POS_X: f32 = -75.0;
-
-const PIXELS_PER_METER: f32 = 30.0 / SCALE;
-const JUMP_SPEED: f32 = 125.0 * PIXELS_PER_METER;
-const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
-
-const BIRD_SIZE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 1.0]);
-
-#[derive(PartialEq)]
-enum GameState {
-    Running,
-    GameOver,
-}
-struct Scoreboard {
-    score: usize,
-}
-
-// in m/s - usually -9.8 m/s
-struct Gravity(f32);
-
-// unscaled
-const PIPE_WIDTH: f32 = 52.0;
-const PIPE_HEIGHT: f32 = 320.0;
-//scaled
-const PIPE_DIM: Vec2 = const_vec2!([PIPE_WIDTH * 2.0, PIPE_HEIGHT * 2.0]);
-const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
-const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
-const PIPE_RANDOM_Y: f32 = 40.0 * PIXELS_PER_METER;
-
-#[derive(Component)]
-struct Pipe;
-
-const FLOOR_WIDTH: f32 = 336.0;
-const FLOOR_HEIGHT: f32 = 112.0;
-
-#[derive(Component)]
-struct Countable(bool);
-
-#[derive(Component)]
-struct ScoreText;
-
-#[derive(Component)]
-struct Collider;
-#[derive(Component)]
-struct Blocker;
-
-struct CollisionEvent;
-
-#[derive(Component)]
-struct Floor;
-#[derive(Component)]
-struct Player {
-    // in m/s
-    movement_speed: f32,
-    angle: f32,
-}
-
-#[derive(Component)]
-struct AutoMoving {
-    width: f32,
-    displacement: f32,
-    randomness: Vec3,
-    initial: Vec3,
-}
-
-#[derive(Component, Deref, DerefMut)]
-struct AnimationTimer(Timer);
-
-fn handle_input_system(
-    time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mouse_button_input: Res<Input<MouseButton>>,
-    touches: Res<Touches>,
-    mut query: Query<(&mut Player)>,
-) {
-    let mut player = query.single_mut();
-
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        player.movement_speed = JUMP_SPEED;
-    }
-
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        player.movement_speed = JUMP_SPEED;
-    }
-
-    for _touch in touches.iter_just_pressed() {
-        player.movement_speed = JUMP_SPEED;
-    }
-}
+pub mod input;
+use input::{handle_input_system, handle_menu_input};
+pub mod components;
+use components::*;
 
 fn player_movement_system(
     time: Res<Time>,
@@ -170,10 +67,10 @@ fn animate_sprite_system(
 }
 
 fn auto_move_system(
-    game_state: Res<GameState>,
+    game_state: Res<State<GameState>>,
     mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>,
 ) {
-    if *game_state == GameState::GameOver {
+    if game_state.current().eq(&GameState::GameOver) {
         return;
     }
 
@@ -220,7 +117,7 @@ fn update_score_text(scoreboard: Res<Scoreboard>, mut query: Query<(&ScoreText, 
 }
 
 fn collision_system(
-    mut game_state: ResMut<GameState>,
+    mut game_state: ResMut<State<GameState>>,
     collider_query: Query<(&Collider, &Transform)>,
     blocker_query: Query<(&Blocker, &GlobalTransform)>,
 ) {
@@ -234,7 +131,7 @@ fn collision_system(
             ); // hmmmm funker ikke
             match collision {
                 Some(_collision) => {
-                    *game_state = GameState::GameOver;
+                    game_state.set(GameState::GameOver).unwrap();
                 }
                 None => {
                     continue;
@@ -420,17 +317,21 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(Scoreboard { score: 0 })
         .insert_resource(Gravity(SCALED_GRAVITY))
-        .insert_resource(GameState::Running)
+        .add_state(GameState::Paused)
         .add_startup_system(setup_player)
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
         .add_startup_system(setup_font)
-        .add_system(handle_input_system)
-        .add_system(player_movement_system)
-        .add_system(animate_sprite_system)
-        .add_system(auto_move_system)
-        .add_system(collision_system)
-        .add_system(point_count_system)
-        .add_system(update_score_text)
+        .add_system_set(SystemSet::on_update(GameState::Paused).with_system(handle_menu_input))
+        .add_system_set(
+            SystemSet::on_update(GameState::Running)
+                .with_system(player_movement_system)
+                .with_system(animate_sprite_system)
+                .with_system(auto_move_system)
+                .with_system(collision_system)
+                .with_system(point_count_system)
+                .with_system(update_score_text)
+                .with_system(handle_input_system),
+        )
         .run();
 }
