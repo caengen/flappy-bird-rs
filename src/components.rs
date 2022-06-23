@@ -3,8 +3,9 @@ use bevy::{
     prelude::*,
 };
 
-pub const SCREEN_HEIGHT: f32 = 960.0;
-pub const SCREEN_WIDTH: f32 = 640.0;
+const SCREEN_HEIGHT: f32 = 960.0;
+const SCREEN_WIDTH: f32 = 640.0;
+pub const SCREEN: Vec2 = const_vec2!([SCREEN_WIDTH, SCREEN_HEIGHT]);
 
 pub const FLOOR_POS: f32 = -112.0 * 4.0;
 pub const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
@@ -17,9 +18,7 @@ pub const SCOREBOARD_TEXT_PADDING: Val = Val::Px(5.0);
 // unscaled consts
 pub const GAME_WIDTH: f32 = 136.0;
 pub const SCALE: f32 = SCREEN_WIDTH / GAME_WIDTH;
-pub const PLAYER_HEIGHT: f32 = 12.0;
-pub const PLAYER_WIDTH: f32 = 16.0;
-pub const PLAYER_DIM: Vec2 = const_vec2!([PLAYER_WIDTH, PLAYER_HEIGHT]);
+pub const PLAYER: Vec2 = const_vec2!([16.0, 12.0]);
 pub const PLAYER_POS_X: f32 = -75.0;
 
 pub const PIXELS_PER_METER: f32 = 30.0 / SCALE;
