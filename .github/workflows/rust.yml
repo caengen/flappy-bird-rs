@@ -20,7 +20,9 @@ jobs:
       - name: Install wasm-bindgen
         run: cargo install wasm-bindgen-cli
       - name: Build
-        run: cargo build --target wasm32-unknown-unknown && wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm
+        run: cargo build --target wasm32-unknown-unknown
+      - name: Wasm-bindgen
+        run: wasm-bindgen --out-dir ./out/ --target web "./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm"
       - name: Copy wasm
         run: cp -R out bin
       - name: Commit wasm
