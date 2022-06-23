@@ -18,8 +18,7 @@ jobs:
       - name: Download wasm target
         run: rustup target add wasm32-unknown-unknown
       - name: Build
-        run: cargo build --target wasm32-unknown-unknown
-        run: wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm
+        run: cargo build --target wasm32-unknown-unknown && wasm-bindgen --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm
       - name: Copy wasm
         run: cp -R out bin
       - name: Commit wasm
