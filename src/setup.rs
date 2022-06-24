@@ -72,7 +72,7 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
                 },
                 ..default()
             })
-            .insert(Blocker)
+            .insert(Blocker(PIPE))
             .id();
 
         let child_bottom = commands
@@ -92,7 +92,7 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
                 },
                 ..default()
             })
-            .insert(Blocker)
+            .insert(Blocker(PIPE))
             .id();
 
         commands
@@ -112,9 +112,8 @@ pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
             .spawn_bundle(SpriteBundle {
                 texture: floor_img,
                 transform: Transform {
-                    scale: vec3(1.0, 1.0, 0.0),
                     translation: vec3(
-                        -(SCREEN.x / 2.0) + FLOOR_WIDTH / 2.0 + (n as f32) * FLOOR_WIDTH,
+                        -(SCREEN.x / 2.0) + FLOOR.x / 2.0 + (n as f32) * FLOOR.x,
                         FLOOR_POS,
                         3.0,
                     ),
@@ -123,12 +122,12 @@ pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             })
             .insert(AutoMoving {
-                width: FLOOR_WIDTH,
+                width: FLOOR.x,
                 displacement: 0.0,
                 initial: vec3(0.0, FLOOR_POS, 1.0),
                 randomness: vec3(0.0, 0.0, 0.0),
             })
-            .insert(Blocker);
+            .insert(Blocker(FLOOR));
     }
 }
 

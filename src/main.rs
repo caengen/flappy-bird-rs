@@ -119,21 +119,25 @@ fn collision_system(
     blocker_query: Query<(&Blocker, &GlobalTransform)>,
 ) {
     for (_, c_transf) in collider_query.iter() {
-        for (_, b_transf) in blocker_query.iter() {
-            println!(
-                "c_pos: {}, c_size: {}",
-                c_transf.translation.to_string(),
-                PLAYER
+        for (blocker, b_transf) in blocker_query.iter() {
+            let collision = collide(
+                c_transf.translation,
+                PLAYER,
+                b_transf.translation,
+                blocker.0,
             );
-            println!(
-                "b_pos: {}, b_size: {}",
-                b_transf.translation.to_string(),
-                PIPE
-            );
-            let collision = collide(c_transf.translation, PLAYER, b_transf.translation, PIPE); // hmmmm funker ikke
             match collision {
                 Some(_collision) => {
-                    print!("{}", b_transf.translation.to_string());
+                    println!(
+                        "c_pos: {}, c_size: {}",
+                        c_transf.translation.to_string(),
+                        PLAYER
+                    );
+                    println!(
+                        "b_pos: {}, b_size: {}",
+                        b_transf.translation.to_string(),
+                        PIPE
+                    );
                     game_state.set(GameState::GameOver).unwrap();
                 }
                 None => {
