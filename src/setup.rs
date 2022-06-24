@@ -117,17 +117,13 @@ pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                         FLOOR_POS,
                         3.0,
                     ),
+                    scale: vec3(1.0, 1.0, 1.0),
                     ..default()
                 },
                 ..default()
             })
-            .insert(AutoMoving {
-                width: FLOOR.x,
-                displacement: 0.0,
-                initial: vec3(0.0, FLOOR_POS, 1.0),
-                randomness: vec3(0.0, 0.0, 0.0),
-            })
-            .insert(Blocker(FLOOR));
+            .insert(SpeedAnimated { width: FLOOR.x })
+            .insert(Blocker(FLOOR * 1.1));
     }
 }
 
@@ -144,7 +140,7 @@ pub fn setup_player(
     commands.spawn_bundle(SpriteBundle {
         texture: bg_image,
         transform: Transform {
-            scale: vec3(0.5 * SCALE, 0.5 * SCALE, 0.0),
+            scale: PLAYER_SCALE,
             ..default()
         },
         ..default()
@@ -170,5 +166,38 @@ pub fn setup_player(
             ..default()
         })
         .insert(Collider)
-        .insert(AnimationTimer(Timer::from_seconds(0.2, true)));
+        .insert(AnimationTimer(Timer::from_seconds(0.15, true)));
+}
+
+pub fn restart_setup_system(
+    _: EventReader<ResetGameEvent>,
+    mut scoreboard: ResMut<Scoreboard>,
+    mut player_query: Query<(&Player, &mut Transform)>,
+    mut pipe_query: Query<(&Countable, &mut Transform, Without<Player>)>,
+    mut text_query: Query<(&ScoreText, &mut Text)>,
+) {
+    scoreboard.score = 0;
+    let (_, mut text) = text_query.single_mut();
+    text.sections.get_mut(0).unwrap().value = "0".to_string();
+
+    let mut rng = thread_rng();
+    let mut n = 0;
+    for (_, mut pipe_transform, _) in pipe_query.iter_mut() {
+        let rand_num = if rng.gen_ratio(1, 2) {
+            rng.gen_range(0.5..1.0)
+        } else {
+            rng.gen_range(-1.0..-0.5)
+        };
+        pipe_transform.translation = vec3(
+            PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
+            n as f32 * (PIPE_RANDOM_Y * rand_num),
+            1.0,
+        );
+
+        n += 1;
+    }
+
+    let (_, mut player_transform) = player_query.single_mut();
+    player_transform.translation = vec3(PLAYER_POS_X, 0.0, 2.0);
+    player_transform.rotation = Quat::from_rotation_z(f32::to_radians(0.0));
 }

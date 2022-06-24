@@ -8,7 +8,7 @@ const SCREEN_WIDTH: f32 = 640.0;
 pub const SCREEN: Vec2 = const_vec2!([SCREEN_WIDTH, SCREEN_HEIGHT]);
 
 pub const FLOOR_POS: f32 = -112.0 * 4.0;
-pub const AUTO_MOVE_SPEED: f32 = 0.7 * PIXELS_PER_METER;
+pub const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
 
 pub const TIME_STEP: f32 = 1.0 / 60.0;
 
@@ -20,10 +20,11 @@ pub const GAME_WIDTH: f32 = 136.0;
 pub const SCALE: f32 = SCREEN_WIDTH / GAME_WIDTH;
 pub const PLAYER_HEIGHT: f32 = 12.0 * SCALE;
 pub const PLAYER: Vec2 = const_vec2!([16.0 * SCALE, PLAYER_HEIGHT]);
+pub const PLAYER_SCALE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 0.0]);
 pub const PLAYER_POS_X: f32 = -75.0;
 
 pub const PIXELS_PER_METER: f32 = 30.0 / SCALE;
-pub const JUMP_SPEED: f32 = 125.0 * PIXELS_PER_METER;
+pub const JUMP_SPEED: f32 = 100.0 * PIXELS_PER_METER;
 pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
 
 pub const BIRD_SIZE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 1.0]);
@@ -36,7 +37,7 @@ pub const FLOOR_HEIGHT: f32 = 112.0;
 //scaled
 pub const PIPE: Vec2 = const_vec2!([PIPE_WIDTH * 2.0, PIPE_HEIGHT * 2.0]);
 pub const FLOOR: Vec2 = const_vec2!([FLOOR_WIDTH, FLOOR_HEIGHT]);
-pub const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
+pub const SPACE_BETWEEN_PIPES: f32 = 60.0 * PIXELS_PER_METER;
 pub const VERTICAL_SPACE_BETWEEN_PIPES: f32 = PLAYER_HEIGHT * 3.5;
 pub const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 pub const PIPE_RANDOM_Y: f32 = 40.0 * PIXELS_PER_METER;
@@ -80,6 +81,11 @@ pub struct Player {
 }
 
 #[derive(Component)]
+pub struct SpeedAnimated {
+    pub width: f32,
+}
+
+#[derive(Component)]
 pub struct AutoMoving {
     pub width: f32,
     pub displacement: f32,
@@ -89,3 +95,5 @@ pub struct AutoMoving {
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(pub Timer);
+
+pub struct ResetGameEvent;

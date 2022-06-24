@@ -1,7 +1,7 @@
 use bevy::{math::vec3, prelude::*, sprite::collide_aabb::collide, window::PresentMode};
 use rand::prelude::*;
 pub mod input;
-use input::{handle_input_system, handle_menu_input};
+use input::{handle_game_over_input, handle_input_system, handle_menu_input};
 pub mod components;
 use components::*;
 pub mod setup;
@@ -37,7 +37,7 @@ fn player_movement_system(
     );
 
     if player.movement_speed > 0.0 {
-        player.angle = 45.0;
+        player.angle = 30.0;
     } else {
         player.angle = (player.angle - 180.0 * time.delta_seconds()).clamp(-90.0, 45.0);
     }
@@ -63,14 +63,7 @@ fn animate_sprite_system(
     }
 }
 
-fn auto_move_system(
-    game_state: Res<State<GameState>>,
-    mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>,
-) {
-    if game_state.current().eq(&GameState::GameOver) {
-        return;
-    }
-
+fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform, Option<&mut Countable>)>) {
     let mut rng = thread_rng();
 
     for (auto_moving, mut transform, countable) in query.iter_mut() {
@@ -85,6 +78,17 @@ fn auto_move_system(
                 SCREEN.x / 2.0 + auto_moving.width / 2.0 + auto_moving.displacement;
             transform.translation.y =
                 auto_moving.initial.y + auto_moving.randomness.y * rng.gen_range(-1.0..1.0);
+        }
+    }
+}
+
+fn animate_world(mut query: Query<(&SpeedAnimated, &mut Transform)>) {
+    for (speed_animated, mut transform) in query.iter_mut() {
+        transform.translation.x -= AUTO_MOVE_SPEED;
+
+        // if out of screen -> move to other side
+        if transform.translation.x + speed_animated.width / 2.0 < -SCREEN.x / 2.0 {
+            transform.translation.x = SCREEN.x / 2.0 + speed_animated.width / 2.0;
         }
     }
 }
@@ -165,11 +169,17 @@ fn main() {
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
         .add_startup_system(setup_font)
-        .add_system_set(SystemSet::on_update(GameState::Paused).with_system(handle_menu_input))
+        .add_system(animate_sprite_system)
+        .add_event::<ResetGameEvent>()
+        .add_system_set(
+            SystemSet::on_update(GameState::Paused)
+                .with_system(handle_menu_input)
+                .with_system(animate_world),
+        )
         .add_system_set(
             SystemSet::on_update(GameState::Running)
-                .with_system(animate_sprite_system)
                 .with_system(auto_move_system)
+                .with_system(animate_world)
                 .with_system(collision_system)
                 .with_system(point_count_system)
                 .with_system(update_score_text)
@@ -177,7 +187,11 @@ fn main() {
                 .with_system(player_movement_system),
         )
         .add_system_set(
-            SystemSet::on_update(GameState::GameOver).with_system(player_movement_system),
+            SystemSet::on_update(GameState::GameOver)
+                .with_system(animate_sprite_system)
+                .with_system(handle_game_over_input)
+                .with_system(restart_setup_system),
         )
+        .add_system_set(SystemSet::on_exit(GameState::GameOver).with_system(restart_setup_system))
         .run();
 }
