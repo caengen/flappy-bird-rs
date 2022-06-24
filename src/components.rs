@@ -18,7 +18,8 @@ pub const SCOREBOARD_TEXT_PADDING: Val = Val::Px(5.0);
 // unscaled consts
 pub const GAME_WIDTH: f32 = 136.0;
 pub const SCALE: f32 = SCREEN_WIDTH / GAME_WIDTH;
-pub const PLAYER: Vec2 = const_vec2!([16.0, 12.0]);
+pub const PLAYER_HEIGHT: f32 = 12.0 * SCALE;
+pub const PLAYER: Vec2 = const_vec2!([16.0 * SCALE, PLAYER_HEIGHT]);
 pub const PLAYER_POS_X: f32 = -75.0;
 
 pub const PIXELS_PER_METER: f32 = 30.0 / SCALE;
@@ -44,8 +45,9 @@ pub struct Gravity(pub f32);
 pub const PIPE_WIDTH: f32 = 52.0;
 pub const PIPE_HEIGHT: f32 = 320.0;
 //scaled
-pub const PIPE_DIM: Vec2 = const_vec2!([PIPE_WIDTH * 2.0, PIPE_HEIGHT * 2.0]);
+pub const PIPE: Vec2 = const_vec2!([PIPE_WIDTH * 2.0, PIPE_HEIGHT * 2.0]);
 pub const SPACE_BETWEEN_PIPES: f32 = 75.0 * PIXELS_PER_METER;
+pub const VERTICAL_SPACE_BETWEEN_PIPES: f32 = PLAYER_HEIGHT * 4.0;
 pub const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 pub const PIPE_RANDOM_Y: f32 = 40.0 * PIXELS_PER_METER;
 

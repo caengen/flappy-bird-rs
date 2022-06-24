@@ -43,14 +43,14 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
                     translation: vec3(
                         PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
                         n as f32 * (PIPE_RANDOM_Y * rand_num),
-                        0.0,
+                        1.0,
                     ),
                     ..Default::default()
                 },
                 ..default()
             })
             .insert(AutoMoving {
-                width: PIPE_WIDTH * 2.0,
+                width: PIPE.x * 2.0,
                 displacement: SPACE_BETWEEN_PIPES / 2.0,
                 randomness: vec3(0.0, PIPE_RANDOM_Y, 0.0),
                 initial: vec3(0.0, 0.0, 0.0),
@@ -59,7 +59,6 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             .id();
         let pipe_top = pipe_handle.clone();
         let pipe_bottom = pipe_top.clone();
-        let space_between = SCREEN.y / 3.5;
         let child_top = commands
             .spawn_bundle(SpriteBundle {
                 texture: pipe_top,
@@ -67,14 +66,15 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             })
             .insert_bundle(TransformBundle {
                 local: Transform {
-                    translation: vec3(0.0, PIPE_HEIGHT + space_between / 2.0, 0.0),
-                    scale: vec3(2.0, 2.0, 0.0),
+                    translation: vec3(0.0, PIPE.y / 2.0 + VERTICAL_SPACE_BETWEEN_PIPES / 2.0, 0.0),
+                    scale: vec3(2.0, 2.0, 1.0),
                     rotation: Quat::from_rotation_z((180.0 as f32).to_radians()),
                 },
                 ..default()
             })
             .insert(Blocker)
             .id();
+
         let child_bottom = commands
             .spawn_bundle(SpriteBundle {
                 texture: pipe_bottom,
@@ -82,14 +82,19 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             })
             .insert_bundle(TransformBundle {
                 local: Transform {
-                    translation: vec3(0.0, -(PIPE_HEIGHT + space_between / 2.0), 0.0),
-                    scale: vec3(2.0, 2.0, 0.0),
+                    translation: vec3(
+                        0.0,
+                        -(PIPE.y / 2.0) - (VERTICAL_SPACE_BETWEEN_PIPES / 2.0),
+                        0.0,
+                    ),
+                    scale: vec3(2.0, 2.0, 1.0),
                     ..default()
                 },
                 ..default()
             })
             .insert(Blocker)
             .id();
+
         commands
             .entity(parent)
             .push_children(&[child_top, child_bottom]);
@@ -111,7 +116,7 @@ pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                     translation: vec3(
                         -(SCREEN.x / 2.0) + FLOOR_WIDTH / 2.0 + (n as f32) * FLOOR_WIDTH,
                         FLOOR_POS,
-                        1.0,
+                        3.0,
                     ),
                     ..default()
                 },
@@ -149,7 +154,7 @@ pub fn setup_player(
     let texture_handle = asset_server.load("sprites/redbird.png");
     let texture_atlas = TextureAtlas::from_grid(texture_handle, vec2(34.0, 24.0), 3, 1);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    let bird_xy = vec3(PLAYER_POS_X, 0.0, 1.0);
+    let bird_xy = vec3(PLAYER_POS_X, 0.0, 2.0);
     commands
         .spawn()
         .insert(Player {

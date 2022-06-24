@@ -29,11 +29,11 @@ fn player_movement_system(
         + vec3(
             PLAYER_POS_X,
             player.movement_speed * time.delta_seconds(),
-            0.0,
+            2.0,
         );
     transform.translation = new_player_pos.clamp(
-        vec3(PLAYER_POS_X, FLOOR_POS + 90.0, 0.0),
-        vec3(PLAYER_POS_X, SCREEN.y / 2.0, 0.0),
+        vec3(PLAYER_POS_X, FLOOR_POS + 90.0, 2.0),
+        vec3(PLAYER_POS_X, SCREEN.y / 2.0, 2.0),
     );
 
     if player.movement_speed > 0.0 {
@@ -115,14 +115,25 @@ fn update_score_text(scoreboard: Res<Scoreboard>, mut query: Query<(&ScoreText, 
 
 fn collision_system(
     mut game_state: ResMut<State<GameState>>,
-    collider_query: Query<(&Collider, &Transform)>,
+    collider_query: Query<(&Collider, &GlobalTransform)>,
     blocker_query: Query<(&Blocker, &GlobalTransform)>,
 ) {
     for (_, c_transf) in collider_query.iter() {
         for (_, b_transf) in blocker_query.iter() {
-            let collision = collide(c_transf.translation, PLAYER, b_transf.translation, PIPE_DIM); // hmmmm funker ikke
+            println!(
+                "c_pos: {}, c_size: {}",
+                c_transf.translation.to_string(),
+                PLAYER
+            );
+            println!(
+                "b_pos: {}, b_size: {}",
+                b_transf.translation.to_string(),
+                PIPE
+            );
+            let collision = collide(c_transf.translation, PLAYER, b_transf.translation, PIPE); // hmmmm funker ikke
             match collision {
                 Some(_collision) => {
+                    print!("{}", b_transf.translation.to_string());
                     game_state.set(GameState::GameOver).unwrap();
                 }
                 None => {
@@ -153,13 +164,16 @@ fn main() {
         .add_system_set(SystemSet::on_update(GameState::Paused).with_system(handle_menu_input))
         .add_system_set(
             SystemSet::on_update(GameState::Running)
-                .with_system(player_movement_system)
                 .with_system(animate_sprite_system)
                 .with_system(auto_move_system)
                 .with_system(collision_system)
                 .with_system(point_count_system)
                 .with_system(update_score_text)
-                .with_system(handle_input_system),
+                .with_system(handle_input_system)
+                .with_system(player_movement_system),
+        )
+        .add_system_set(
+            SystemSet::on_update(GameState::GameOver).with_system(player_movement_system),
         )
         .run();
 }
