@@ -24,7 +24,7 @@ jobs:
       - name: Wasm-bindgen
         run: wasm-bindgen --out-dir ./out/ --target web "./target/wasm32-unknown-unknown/release/flappy-bird-rs.wasm"
       - name: Copy wasm
-        run: cp -R out bin
+        run: cp -a /out/. /bin/
       - name: Commit wasm
         uses: EndBug/add-and-commit@v9
         with:
