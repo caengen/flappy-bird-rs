@@ -169,11 +169,11 @@ pub fn setup_player(
         .insert(AnimationTimer(Timer::from_seconds(0.15, true)));
 }
 
-pub fn restart_setup_system(
+pub fn game_over_cleanup(
     _: EventReader<ResetGameEvent>,
     mut scoreboard: ResMut<Scoreboard>,
     mut player_query: Query<(&Player, &mut Transform)>,
-    mut pipe_query: Query<(&Countable, &mut Transform, Without<Player>)>,
+    mut pipe_query: Query<(&mut Countable, &mut Transform, Without<Player>)>,
     mut text_query: Query<(&ScoreText, &mut Text)>,
 ) {
     scoreboard.score = 0;
@@ -182,7 +182,7 @@ pub fn restart_setup_system(
 
     let mut rng = thread_rng();
     let mut n = 0;
-    for (_, mut pipe_transform, _) in pipe_query.iter_mut() {
+    for (mut countable, mut pipe_transform, _) in pipe_query.iter_mut() {
         let rand_num = if rng.gen_ratio(1, 2) {
             rng.gen_range(0.5..1.0)
         } else {
@@ -193,6 +193,7 @@ pub fn restart_setup_system(
             n as f32 * (PIPE_RANDOM_Y * rand_num),
             1.0,
         );
+        countable.0 = true;
 
         n += 1;
     }

@@ -24,15 +24,17 @@ pub fn handle_menu_input(
 pub fn handle_game_over_input(
     mut reset_game_event: EventWriter<ResetGameEvent>,
     mut game_state: ResMut<State<GameState>>,
-    keyboard_input: Res<Input<KeyCode>>,
-    mouse_button_input: Res<Input<MouseButton>>,
-    touches: Res<Touches>,
+    mut keyboard_input: ResMut<Input<KeyCode>>,
+    mut mouse_button_input: ResMut<Input<MouseButton>>,
+    touches: ResMut<Touches>,
 ) {
     if mouse_button_input.just_pressed(MouseButton::Left)
         || keyboard_input.just_pressed(KeyCode::Space)
     {
         reset_game_event.send(ResetGameEvent);
         game_state.set(GameState::Paused).unwrap();
+        mouse_button_input.reset(MouseButton::Left);
+        keyboard_input.reset(KeyCode::Space);
     }
 
     for _touch in touches.iter_just_pressed() {

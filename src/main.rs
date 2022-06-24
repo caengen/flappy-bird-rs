@@ -143,6 +143,7 @@ fn collision_system(
                         PIPE
                     );
                     game_state.set(GameState::GameOver).unwrap();
+                    break;
                 }
                 None => {
                     continue;
@@ -190,8 +191,8 @@ fn main() {
             SystemSet::on_update(GameState::GameOver)
                 .with_system(animate_sprite_system)
                 .with_system(handle_game_over_input)
-                .with_system(restart_setup_system),
+                .with_system(player_movement_system),
         )
-        .add_system_set(SystemSet::on_exit(GameState::GameOver).with_system(restart_setup_system))
+        .add_system_set(SystemSet::on_exit(GameState::GameOver).with_system(game_over_cleanup))
         .run();
 }
