@@ -23,7 +23,7 @@ pub const PLAYER_POS_X: f32 = -75.0;
 pub const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 
 // speed
-pub const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
+pub const AUTO_MOVE_SPEED: f32 = 0.8 * PIXELS_PER_METER;
 pub const JUMP_SPEED: f32 = 115.0 * PIXELS_PER_METER;
 pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
 
