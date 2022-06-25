@@ -171,12 +171,12 @@ fn main() {
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
         .add_startup_system(setup_font)
-        .add_system(animate_sprite_system)
         .add_event::<ResetGameEvent>()
         .add_system_set(
             SystemSet::on_update(GameState::Paused)
                 .with_system(handle_menu_input)
-                .with_system(animate_world),
+                .with_system(animate_world)
+                .with_system(animate_sprite_system),
         )
         .add_system_set(
             SystemSet::on_update(GameState::Running)
@@ -186,11 +186,11 @@ fn main() {
                 .with_system(point_count_system)
                 .with_system(update_score_text)
                 .with_system(handle_input_system)
+                .with_system(animate_sprite_system)
                 .with_system(player_movement_system),
         )
         .add_system_set(
             SystemSet::on_update(GameState::GameOver)
-                .with_system(animate_sprite_system)
                 .with_system(handle_game_over_input)
                 .with_system(player_movement_system),
         )

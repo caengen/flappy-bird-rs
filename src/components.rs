@@ -23,9 +23,9 @@ pub const PLAYER_POS_X: f32 = -75.0;
 pub const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 
 // speed
-pub const AUTO_MOVE_SPEED: f32 = 0.8 * PIXELS_PER_METER;
+pub const AUTO_MOVE_SPEED: f32 = 0.6 * PIXELS_PER_METER;
 pub const JUMP_SPEED: f32 = 115.0 * PIXELS_PER_METER;
-pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER;
+pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER * 0.7; // 70% gravity _feels_ right
 
 //fonts
 pub const SCOREBOARD_FONT_SIZE: f32 = 40.0;
@@ -39,7 +39,7 @@ pub const PLAYER_HEIGHT: f32 = 12.0 * SCALE;
 pub const PLAYER: Vec2 = const_vec2!([16.0 * SCALE, PLAYER_HEIGHT]);
 pub const PLAYER_SCALE: Vec3 = const_vec3!([0.5 * SCALE, 0.5 * SCALE, 0.0]);
 pub const SPACE_BETWEEN_PIPES: f32 = 70.0 * PIXELS_PER_METER;
-pub const VERTICAL_SPACE_BETWEEN_PIPES: f32 = PLAYER_HEIGHT * 3.25;
+pub const VERTICAL_SPACE_BETWEEN_PIPES: f32 = PLAYER_HEIGHT * 3.3;
 pub const PIPE_OPENING_Y_POS_FACTOR: f32 = 30.0 * PIXELS_PER_METER;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
