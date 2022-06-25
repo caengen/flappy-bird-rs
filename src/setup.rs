@@ -137,7 +137,8 @@ pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ..default()
             })
             .insert(SpeedAnimated { width: FLOOR.x })
-            .insert(Blocker(FLOOR * 1.1));
+            // compensating for collision not taking rotation into account?
+            .insert(Blocker(FLOOR * 1.2));
     }
 }
 
