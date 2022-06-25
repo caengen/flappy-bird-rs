@@ -113,8 +113,9 @@ fn point_count_system(
 }
 
 fn update_score_text(scoreboard: Res<Scoreboard>, mut query: Query<(&ScoreText, &mut Text)>) {
-    let (_, mut text) = query.single_mut();
-    text.sections.get_mut(0).unwrap().value = scoreboard.score.to_string();
+    for (_, mut text) in query.iter_mut() {
+        text.sections.get_mut(0).unwrap().value = scoreboard.score.to_string();
+    }
 }
 
 fn collision_system(

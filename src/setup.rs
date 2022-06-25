@@ -6,7 +6,13 @@ use bevy::{
 use rand::prelude::*;
 
 pub fn setup_font(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let font = asset_server.load("flappy-font.ttf");
+    let shadow_font = asset_server.load("flappy-font.ttf");
+    let font = shadow_font.clone();
+    let shadow_style = TextStyle {
+        font: shadow_font,
+        font_size: 100.0,
+        color: Color::BLACK,
+    };
     let style = TextStyle {
         font,
         font_size: 100.0,
@@ -17,10 +23,18 @@ pub fn setup_font(mut commands: Commands, asset_server: Res<AssetServer>) {
         horizontal: HorizontalAlign::Center,
     };
 
+    //shadow
+    commands
+        .spawn_bundle(Text2dBundle {
+            text: Text::with_section("0", shadow_style, alignment),
+            transform: Transform::from_xyz(5.0, SCREEN.y / 4.0 - 5.0, 10.0),
+            ..default()
+        })
+        .insert(ScoreText);
     commands
         .spawn_bundle(Text2dBundle {
             text: Text::with_section("0", style, alignment),
-            transform: Transform::from_xyz(0.0, SCREEN.y / 4.0, 1.0),
+            transform: Transform::from_xyz(0.0, SCREEN.y / 4.0, 11.0),
             ..default()
         })
         .insert(ScoreText);
@@ -42,7 +56,7 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
                 local: Transform {
                     translation: vec3(
                         PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
-                        n as f32 * (PIPE_RANDOM_Y * rand_num),
+                        n as f32 * (PIPE_OPENING_Y_POS_FACTOR * rand_num),
                         1.0,
                     ),
                     ..Default::default()
@@ -52,7 +66,7 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
             .insert(AutoMoving {
                 width: PIPE.x * 2.0,
                 displacement: SPACE_BETWEEN_PIPES / 2.0,
-                randomness: vec3(0.0, PIPE_RANDOM_Y, 0.0),
+                randomness: vec3(0.0, PIPE_OPENING_Y_POS_FACTOR, 0.0),
                 initial: vec3(0.0, 0.0, 0.0),
             })
             .insert(Countable(true))
@@ -177,8 +191,9 @@ pub fn game_over_cleanup(
     mut text_query: Query<(&ScoreText, &mut Text)>,
 ) {
     scoreboard.score = 0;
-    let (_, mut text) = text_query.single_mut();
-    text.sections.get_mut(0).unwrap().value = "0".to_string();
+    for (_, mut text) in text_query.iter_mut() {
+        text.sections.get_mut(0).unwrap().value = "0".to_string();
+    }
 
     let mut rng = thread_rng();
     let mut n = 0;
@@ -190,7 +205,7 @@ pub fn game_over_cleanup(
         };
         pipe_transform.translation = vec3(
             PIPE_START_X + n as f32 * SPACE_BETWEEN_PIPES,
-            n as f32 * (PIPE_RANDOM_Y * rand_num),
+            n as f32 * (PIPE_OPENING_Y_POS_FACTOR * rand_num),
             1.0,
         );
         countable.0 = true;
