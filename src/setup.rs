@@ -158,8 +158,8 @@ pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 pub fn setup_floor(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let quotient = FLOOR_WIDTH / SCREEN.x;
-    let floors = f32::ceil(1.5 / quotient) as i32;
+    let quotient = SCREEN.x / FLOOR_WIDTH;
+    let floors = f32::ceil(1.5 * quotient) as i32;
 
     let base_image = asset_server.load("sprites/base.png");
     for n in 0..floors {

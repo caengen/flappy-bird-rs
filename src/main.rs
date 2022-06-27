@@ -83,12 +83,13 @@ fn auto_move_system(mut query: Query<(&AutoMoving, &mut Transform, Option<&mut C
 }
 
 fn animate_world(mut query: Query<(&SpeedAnimated, &mut Transform)>) {
-    for (speed_animated, mut transform) in query.iter_mut() {
+    let iter = query.iter_mut();
+    let total: f32 = iter.len() as f32;
+    for (speed_animated, mut transform) in iter {
         transform.translation.x -= AUTO_MOVE_SPEED;
 
-        // if out of screen -> move to other side
         if transform.translation.x + speed_animated.width / 2.0 < -SCREEN.x / 2.0 {
-            transform.translation.x = SCREEN.x / 2.0 + speed_animated.width / 2.0;
+            transform.translation.x = transform.translation.x + (speed_animated.width * total);
         }
     }
 }
