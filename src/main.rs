@@ -171,6 +171,7 @@ fn main() {
         .add_startup_system(setup_floor)
         .add_startup_system(setup_pipes)
         .add_startup_system(setup_font)
+        .add_startup_system(setup_game_over_ui)
         .add_event::<ResetGameEvent>()
         .add_system_set(
             SystemSet::on_update(GameState::Paused)
@@ -190,10 +191,17 @@ fn main() {
                 .with_system(player_movement_system),
         )
         .add_system_set(
+            SystemSet::on_enter(GameState::GameOver).with_system(set_game_over_ui_visible),
+        )
+        .add_system_set(
             SystemSet::on_update(GameState::GameOver)
                 .with_system(handle_game_over_input)
                 .with_system(player_movement_system),
         )
-        .add_system_set(SystemSet::on_exit(GameState::GameOver).with_system(game_over_cleanup))
+        .add_system_set(
+            SystemSet::on_exit(GameState::GameOver)
+                .with_system(game_over_cleanup)
+                .with_system(set_game_over_ui_hidden),
+        )
         .run();
 }

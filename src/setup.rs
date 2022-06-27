@@ -1,7 +1,9 @@
 use crate::components::*;
 use bevy::{
+    ecs::query::QueryIter,
     math::{vec2, vec3},
     prelude::*,
+    utils::Duration,
 };
 use rand::prelude::*;
 
@@ -38,6 +40,46 @@ pub fn setup_font(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .insert(ScoreText);
+}
+
+pub fn setup_game_over_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let image = asset_server.load("sprites/gameover.png");
+
+    commands.spawn().insert(GameOverUIInputTimer(Timer::new(
+        Duration::from_millis(500),
+        false,
+    )));
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            texture: image,
+            transform: Transform {
+                translation: vec3(0.0, 0.0, 10.0),
+                scale: vec3(2.0, 2.0, 1.0),
+                ..default()
+            },
+            visibility: Visibility { is_visible: false },
+            ..default()
+        })
+        .insert(GameOverUI);
+}
+
+pub fn set_game_over_ui_visible(
+    mut query: Query<(&GameOverUI, &mut Visibility)>,
+    mut timer_query: Query<(Entity, &mut GameOverUIInputTimer)>,
+) {
+    for (_, mut timer) in timer_query.iter_mut() {
+        timer.0.reset();
+    }
+
+    for (_, mut visibility) in query.iter_mut() {
+        visibility.is_visible = true;
+    }
+}
+pub fn set_game_over_ui_hidden(mut query: Query<(&GameOverUI, &mut Visibility)>) {
+    for (_, mut visibility) in query.iter_mut() {
+        visibility.is_visible = false;
+    }
 }
 
 pub fn setup_pipes(mut commands: Commands, asset_server: Res<AssetServer>) {
