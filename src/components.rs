@@ -23,9 +23,9 @@ pub const PLAYER_POS_X: f32 = -75.0;
 pub const PIPE_START_X: f32 = SCREEN_WIDTH + PIPE_WIDTH;
 
 // speed
-pub const AUTO_MOVE_SPEED: f32 = 0.8 * PIXELS_PER_METER;
+pub const AUTO_MOVE_SPEED: f32 = 0.9 * PIXELS_PER_METER;
 pub const JUMP_SPEED: f32 = 85.0 * PIXELS_PER_METER;
-pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER * 0.7; // 70% gravity _feels_ right
+pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER * 0.9;
 
 //fonts
 pub const SCOREBOARD_FONT_SIZE: f32 = 40.0;
