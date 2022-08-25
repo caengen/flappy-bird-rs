@@ -18,9 +18,9 @@ pub const FLOOR_WIDTH: f32 = 336.0;
 pub const FLOOR_HEIGHT: f32 = 112.0;
 
 // speed
-pub const AUTO_MOVE_SPEED: f32 = 0.9 * PIXELS_PER_METER;
+pub const AUTO_MOVE_SPEED: f32 = 1.0 * PIXELS_PER_METER;
 pub const JUMP_SPEED: f32 = 100.0 * PIXELS_PER_METER;
-pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER * 0.9;
+pub const SCALED_GRAVITY: f32 = -9.81 * PIXELS_PER_METER * 1.0;
 
 // pos vals
 pub const FLOOR_POS: f32 = -112.0 * 4.0;
