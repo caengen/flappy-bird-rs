@@ -1,7 +1,7 @@
 # Flappy Bird
 Flappy bird clone in Rust using Bevy.
 
-
+🚨 PLAYING IN EDGE IS _HARD_ MODE 🚨
 
 Run `cargo run`.
 
